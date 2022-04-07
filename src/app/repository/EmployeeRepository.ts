@@ -1,4 +1,5 @@
 import { EntityRepository, getConnection, Repository } from "typeorm";
+import { Address } from "../entities/address";
 import { Employee } from "../entities/Employee";
 
 export class EmployeeRepository extends Repository<Employee> {
@@ -9,7 +10,22 @@ export class EmployeeRepository extends Repository<Employee> {
 
     public async getEmployeeById(id: string) {
         const employeeRepo = getConnection().getRepository(Employee);
-        return employeeRepo.findOne(id);
+        // return employeeRepo.findOne(id, {
+        //     relations: ["address"]
+        // });
+        const response = await employeeRepo.createQueryBuilder('employee')
+        .leftJoinAndSelect(Address, 'address', 'address.id = employee.add_id')
+        .execute();
+        console.log(response);
+        return response;
+    }
+
+    public async getEmployeeByUsername(username: string){
+        const employeeRepo = getConnection().getRepository(Employee);
+        const employeeDetail = await employeeRepo.findOne({
+            where: {username},
+        });
+        return employeeDetail;
     }
 
     public async saveEmployeeDetails(employeeDetails: Employee) {
@@ -21,7 +37,9 @@ export class EmployeeRepository extends Repository<Employee> {
         const employeeRepo = getConnection().getRepository(Employee);
         const updateEmployeeDetails = await employeeRepo.update({ id: employeeId, deletedAt: null }, {
             name: employeeDetails.name ? employeeDetails.name : undefined,
-            age: employeeDetails.age ? employeeDetails.age : undefined
+            age: employeeDetails.age ? employeeDetails.age : undefined,
+            addId: employeeDetails.addId ? employeeDetails.addId : undefined
+
         });
         return updateEmployeeDetails;
     }
